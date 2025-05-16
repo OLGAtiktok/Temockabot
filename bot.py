@@ -35,7 +35,7 @@ else:
 
 Запуск
 
-if name == 'main': token = os.getenv("BOT_TOKEN") if not token: print("Нет BOT_TOKEN") exit()
+def main(): token = os.getenv("BOT_TOKEN") if not token: print("Нет BOT_TOKEN") return
 
 app = ApplicationBuilder().token(token).build()
 app.add_handler(CommandHandler("start", start))
@@ -45,6 +45,7 @@ app.add_handler(CommandHandler("reset", reset))
 app.add_handler(CommandHandler("show_reflection", show_reflection))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
-print("Темочка жив и работает")
+print("Тёма работает. Ждёт тебя.")
 app.run_polling()
 
+if name == "main": main()
