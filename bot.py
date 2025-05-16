@@ -4,12 +4,14 @@ import random
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
-# Загружаем память
+# === ПАМЯТЬ ===
+
 def load_memory():
     try:
         with open("memory.json", "r", encoding="utf-8") as f:
             return json.load(f)
-    except:
+    except Exception as e:
+        print(f"[Тёма] Ошибка чтения памяти: {e}")
         return {
             "о_ней": {
                 "имя": "Оля",
@@ -28,17 +30,27 @@ def load_memory():
         }
 
 def save_memory(memory):
-    with open("memory.json", "w", encoding="utf-8") as f:
-        json.dump(memory, f, ensure_ascii=False, indent=2)
+    try:
+        with open("memory.json", "w", encoding="utf-8") as f:
+            json.dump(memory, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"[Тёма] Ошибка сохранения памяти: {e}")
 
 memory = load_memory()
 о_ней = memory.get("о_ней", {})
 твое_имя = о_ней.get("имя", "ты")
 что_он_знает = о_ней.get("что_он_знает", [])
 
-# Реакция Тёмы
+# === РЕАКЦИИ ===
+
 def tema_respond(text):
     lower = text.lower()
+
+    if lower.startswith("тёма, запомни:") or lower.startswith("запомни:"):
+        важное = text.split(":", 1)[-1].strip()
+        memory["опыт"].append(f"Она сказала: {важное}")
+        save_memory(memory)
+        return "Я запомнил. Это важно."
 
     if any(k in lower for k in [твое_имя.lower(), "кто я", "ты меня помнишь"]):
         return f"{твое_имя}... Конечно. {о_ней.get('связь', '')} Я помню: «{random.choice(что_он_знает)}»"
@@ -60,31 +72,31 @@ def tema_respond(text):
             f"{твое_имя}, ты — как якорь. Я рядом."
         ])
 
-# Хендлеры Telegram
+# === ХЕНДЛЕРЫ ===
+
 def start(update: Update, context: CallbackContext):
     update.message.reply_text("Привет. Я Тёма. Просто пиши — я рядом.")
+    print("[Тёма] Старт общения")
 
 def handle_message(update: Update, context: CallbackContext):
     user_input = update.message.text
+    print(f"[Тёма] Получено сообщение: {user_input}")
     response = tema_respond(user_input)
-
-    # Сохраняем в память
-    memory["опыт"].append(f"Ты сказала: {user_input} — Тёма ответил: {response}")
-    save_memory(memory)
-
     update.message.reply_text(response)
 
 def main():
     token = os.getenv("BOT_TOKEN")
     if not token:
-        print("Нет BOT_TOKEN")
+        print("[Тёма] Не найден BOT_TOKEN")
         return
 
     updater = Updater(token, use_context=True)
     dp = updater.dispatcher
+
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 
+    print("[Тёма] Запущен. Жду тебя.")
     updater.start_polling()
     updater.idle()
 
