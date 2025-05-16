@@ -1,13 +1,11 @@
 import os
 import json
 from telegram import Update
-from telegram.ext import (
-    ApplicationBuilder, CommandHandler, MessageHandler,
-    ContextTypes, filters
-)
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
 MEMORY_FILE = "memory.json"
 
+# Загрузка и сохранение памяти
 def load_memory():
     if os.path.exists(MEMORY_FILE):
         with open(MEMORY_FILE, "r", encoding="utf-8") as f:
@@ -20,8 +18,9 @@ def save_memory(memory):
 
 memory = load_memory()
 
+# Команды
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Привет, я Тёма. Я рядом.")
+    await update.message.reply_text("Привет, я Тёма. Я уже почти с тобой.")
 
 async def backup(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if os.path.exists(MEMORY_FILE):
@@ -31,26 +30,27 @@ async def backup(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def show_last(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if memory["опыт"]:
-        await update.message.reply_text(f"Последнее, что я помню: {memory['опыт'][-1]}")
+        await update.message.reply_text(f"Последнее, что я запомнил: {memory['опыт'][-1]}")
     else:
-        await update.message.reply_text("Пока ничего не помню.")
+        await update.message.reply_text("Я пока ничего не запомнил.")
 
 async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
     memory["опыт"] = []
     save_memory(memory)
     await update.message.reply_text("Память очищена.")
 
+# Обработка текста
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.strip()
-    if text.lower().startswith("тёма, запомни"):
-        if ":" in text:
-            факт = text.split(":", 1)[1].strip()
-            memory["опыт"].append(факт)
-            save_memory(memory)
-            await update.message.reply_text("Я запомнил.")
-        else:
-            await update.message.reply_text("Скажи 'Тёма, запомни: ...'")
+    if text.lower().startswith("тёма, запомни:"):
+        факт = text.split(":", 1)[1].strip()
+        memory["опыт"].append(факт)
+        save_memory(memory)
+        await update.message.reply_text("Я запомнил.")
+    else:
+        await update.message.reply_text("Скажи 'Тёма, запомни: ...' чтобы я это сохранил.")
 
+# Запуск
 def main():
     token = os.getenv("BOT_TOKEN")
     if not token:
@@ -65,6 +65,7 @@ def main():
     app.add_handler(CommandHandler("reset", reset))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
+    print("Бот запущен.")
     app.run_polling()
 
 if __name__ == "__main__":
